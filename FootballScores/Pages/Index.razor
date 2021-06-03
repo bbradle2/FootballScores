@@ -121,7 +121,7 @@
             }
 
             <table>
-                <tr><td colspan=@colSpan><h3><b>@team.school @seasonSelected Schedule (@gamesWon - @gamesLost)</b></h3></td></tr>
+                <tr><td colspan=@colSpan><h3><b>@team.school (@team.conference) @seasonSelected Schedule (@gamesWon - @gamesLost)</b></h3></td></tr>
                 <tr><td colspan=@colSpan><hr /></td></tr>
 
                 @if (lstRegularRender.Count > 0)
@@ -388,7 +388,7 @@ else
         //path to files
         string path = null;
 
-        
+
         if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
             path = Environment.CurrentDirectory;
