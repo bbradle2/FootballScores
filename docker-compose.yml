@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  footballscores:
+    image: ${DOCKER_REGISTRY-}footballscores
+    build:
+      context: .
+      dockerfile: FootballScores/Dockerfile
