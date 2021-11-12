@@ -21,23 +21,35 @@ namespace FootballScores.Components
             base.AllowNullInternal = true;
             base.PickerDisplayMode = DatePickerDisplayMode.Auto;
             CustomDisabledDate = OnCustomDisabledDate;
+            
+            
         }
 
         void OnCustomDisabledDate(CalendarCustomDisabledDateEventArgs args)
         {
-            if (EnableDates != null && EnableDates.Count() > 0)
+
+            if (EnableDates != null && EnableDates.Any())
             {
                 if (EnableDates.Find((s) => s.Value.Day == args.Date.Day && s.Value.Month == args.Date.Month && s.Value.Year == args.Date.Year) != null)
+                {
                     args.IsDisabled = false;
+                    
+                }
                 else
+                {
                     args.IsDisabled = true;
+                                       
+                }
+                
             }
             else
             {
                 args.IsDisabled = false;
+                
             }
         }
 
+         
         [Parameter]
         public DateTime? NullableValue
         {
@@ -81,6 +93,11 @@ namespace FootballScores.Components
                 nullValueChanged.Invoke(NullableValue);
             }
             base.OnValueChangedInternal();
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder __builder)
+        {
+            base.BuildRenderTree(__builder);
         }
     }
 
@@ -136,6 +153,7 @@ namespace FootballScores.Components
             builder.AddAttribute(sequenceOffset + 4, "NullableValueChanged", nullValueChange);
             builder.AddAttribute(sequenceOffset + 5, "EnableDates", this.EnableDates);
             builder.AddAttribute(sequenceOffset + 6, "ShowClearButton", false);
+            
            
             builder.CloseComponent();
             return sequenceOffset + 6;

@@ -37,6 +37,7 @@ namespace FootballScores
             services.AddServerSideBlazor();
             //services.AddDevExpressBlazor();
             services.AddTransient<BlazorTimer>();
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -54,6 +55,7 @@ namespace FootballScores
                 app.UseHsts();
             }
 
+            
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 

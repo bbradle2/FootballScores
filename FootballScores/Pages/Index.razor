@@ -1,19 +1,103 @@
 ﻿@page "/"
 @inject HttpClient Http
-@inject IJSRuntime JSRuntime
+@*@inject IJSRuntime JSRuntime*@
 @inject Services.BlazorTimer Timer
+@implements IDisposable
+
 
 @using DevExpress.Blazor;
 @using FootballScores.Components;
-@using System.Diagnostics;
 @using Newtonsoft.Json;
 @using System.Net.Http.Headers;
 
-
-@if(PopupVisible)
+@if (ShowAPTop25ModalVisible)
 {
+    <DxPopup CssClass="custom-popup" @bind-Visible="@ShowAPTop25ModalVisible">
+        <HeaderTemplate>
+            <div class="custom-header bg-white text-dark w-100">
+                <a class="close-button oi oi-x text-dark" href="javascript:;" aria-hidden="true" role="button" aria-label="Close popup" @onclick="@(() => ShowAPTop25ModalVisible = false)"></a>
+            </div>
+        </HeaderTemplate>
+
+        <Content>
+            <DxDataGrid @ref="@gridRefTop25"
+                        ShowFilterRow="false"
+                        SelectionMode="DataGridSelectionMode.None"
+                        AllowSort="@false"
+                        HtmlDataCellDecoration="@OnHtmlDataCellDecoration"
+                        CssClass="mw-1100"
+                        Data="@top25APGamesRegularSeason"
+                        AllowColumnDragDrop="@false"
+                        >
+                <HeaderTemplate>
+                    <center><h1>Top 25 For Week @top25APGamesRegularSeason.FirstOrDefault().week</h1></center>
+                </HeaderTemplate>
+
+                <Columns>
+                    @*<MyDxDataGridIntComboBoxColumn Field="@nameof(Game.week)"
+                                                   Caption="Week"
+                                                   Data="@regularWeeks"
+                                                   FilteringMode="DataGridFilteringMode.Contains"
+                                                   Width="15px"
+                                                   IntialFilter="@defaultRegularWeek"
+                                                   AllowFilter="false">
+                    </MyDxDataGridIntComboBoxColumn>*@
+                    <MyDxDateGridColumn EnableDates="@enabledDatesReg"
+                                        Caption="Date" Field="@nameof(Game.start_date)"
+                                        DisplayFormat="f"
+                                        Width="275px"
+                                        AllowFilter="false">
+
+                    </MyDxDateGridColumn>
+                    <DxDataGridComboBoxColumn Field="@nameof(Game.away_team)"
+                                              Caption="Away Team"
+                                              Data="@teamsRegular"
+                                              ValueFieldName="@nameof(Team.school)"
+                                              TextFieldName="@nameof(Team.school)"
+                                              FilteringMode="DataGridFilteringMode.Contains"
+                                              Width="250px">
+
+                        <DisplayTemplate>
+                            @{
+                                @RenderTeamGridCell((Game)context, false, regularRankings);
+                            }
+                        </DisplayTemplate>
+                    </DxDataGridComboBoxColumn>
+                    <DxDataGridColumn Caption="Score"
+                                      Field="@nameof(Game.away_points)"
+                                      AllowFilter="@false"
+                                      Width="20px" />
+                    <DxDataGridComboBoxColumn Field="@nameof(Game.home_team)"
+                                              Caption="Home Team"
+                                              Data="@teamsRegular"
+                                              ValueFieldName="@nameof(Team.school)"
+                                              TextFieldName="@nameof(Team.school)"
+                                              FilteringMode="DataGridFilteringMode.Contains"
+                                              Width="250px">
+
+                        <DisplayTemplate>
+                            @{
+                                @RenderTeamGridCell((Game)context, true, regularRankings);
+                            }
+                        </DisplayTemplate>
+                    </DxDataGridComboBoxColumn>
+                    <DxDataGridColumn Caption="Score"
+                                      Field="@nameof(Game.home_points)"
+                                      AllowFilter="@false"
+                                      Width="20px" />
+
+                </Columns>
+            </DxDataGrid>
+        </Content>
+    </DxPopup>
+}
+
+@if (DetailPopupVisible)
+{
+
     var team = teamsRegular.Where((s) => s.id == teamSelectedId).FirstOrDefault();
-    var gamesForTeamRegularSeason = gamesRegularSeason.Where((s) => (s.home_id == teamSelectedId || s.away_id == teamSelectedId) && s.season == seasonSelected).OrderBy((s) => s.start_date).ToList();
+    //var gamesForTeamRegularSeason = gamesRegularSeason.Where((s) => (s.home_id == teamSelectedId || s.away_id == teamSelectedId) && s.season == seasonSelected).OrderBy((s) => s.start_date).OrderBy((s) => s.week).ToList();
+    var gamesForTeamRegularSeason = gamesRegularSeason.Where((s) => (s.home_id == teamSelectedId || s.away_id == teamSelectedId) && s.season == seasonSelected).OrderBy((s) => s.week).ToList();
     var gamesForTeamPostSeason = gamesPostSeason.Where((s) => (s.home_id == teamSelectedId || s.away_id == teamSelectedId) && s.season == seasonSelected).OrderBy((s) => s.start_date).ToList();
     int gamesWon = 0;
     int gamesLost = 0;
@@ -21,7 +105,6 @@
     List<RenderFragment> lstRegularRender = new List<RenderFragment>();
     List<RenderFragment> lstPostRender = new List<RenderFragment>();
     int colSpan = 5;
-
     string cellstyle = "text-align:right";
 
     if (team.logos != null)
@@ -33,93 +116,109 @@
         logo = "blank.png";
     }
 
-
     lstRegularRender.Clear();
     lstPostRender.Clear();
 
-    <DxPopup CssClass="custom-popup" @bind-Visible="@PopupVisible">
+    @foreach (var game in gamesForTeamRegularSeason)
+    {
+        bool gameInRange = game.start_date < DateTime.Now;
+        string gameDate = game.start_date.ToString("ddd MM/dd/yyyy hh:mm tt");
+        string gameWeek = string.Empty;
+
+        //if (gameInRange)
+            gameWeek = "Week " + @game.week;
+
+        if (game.home_id == teamSelectedId)
+        {
+            if (game.home_points > game.away_points)
+            {
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
+                if (gameInRange)
+                    gamesWon++;
+            }
+            else if (game.home_points < game.away_points)
+            {
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td></tr>);
+                if (gameInRange)
+                    gamesLost++;
+            }
+            else 
+            {
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
+            }
+        }
+        else
+        {
+            if (game.away_points > game.home_points)
+            {
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school @@</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
+                if (gameInRange)
+                    gamesWon++;
+            }
+            else if (game.away_points < game.home_points)
+            {
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td></tr>);
+                if (gameInRange)
+                    gamesLost++;
+            } 
+            else
+            {
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
+            }
+        }
+    }
+
+
+    @foreach (var game in gamesForTeamPostSeason)
+    {
+        bool gameInRange = game.start_date < DateTime.Now;
+        string gameDate = game.start_date.ToString("ddd MM/dd/yyyy hh:mm tt");
+        string gameWeek = "Week " + @game.week;
+
+        if (game.home_points > 0 && game.away_points > 0)
+        {
+            if (game.home_id == teamSelectedId)
+            {
+                if (game.home_points > game.away_points)
+                {
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
+                    if (gameInRange)
+                        gamesWon++;
+                }
+                else
+                {
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td></tr>);
+                    if (gameInRange)
+                        gamesLost++;
+                }
+            }
+            else
+            {
+                if (game.away_points > game.home_points)
+                {
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school @@</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
+                    if (gameInRange)
+                        gamesWon++;
+                }
+                else
+                {
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td></tr>);
+                    if (gameInRange)
+                        gamesLost++;
+                }
+            }
+        }
+    }
+
+    <DxPopup CssClass="custom-popup" @bind-Visible="@DetailPopupVisible">
         <HeaderTemplate>
             <div class="custom-header bg-white text-dark w-100">
-                <span style="margin-left:5px"><img width="35" height="35" src="@logo"/></span>
-                <a class="close-button oi oi-x text-dark" href="javascript:;" aria-hidden="true" role="button" aria-label="Close popup" @onclick="@(() => PopupVisible = false)"></a>
+                <span style="margin-left:5px"><img width="35" height="35" src="@logo" /></span>
+                <a class="close-button oi oi-x text-dark" href="javascript:;" aria-hidden="true" role="button" aria-label="Close popup" @onclick="@(() => DetailPopupVisible = false)"></a>
             </div>
         </HeaderTemplate>
+
         <Content>
-            
-            @foreach (var game in gamesForTeamRegularSeason)
-            {
-                bool gameInRange = game.start_date < DateTime.Now;
-
-                if (game.home_id == teamSelectedId)
-                {
-                    if (game.home_points > game.away_points)
-                    {
-                        lstRegularRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
-                        if(gameInRange)
-                            gamesWon++;
-                    }
-                    else
-                    {
-                        lstRegularRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school</h6></td><td  style=@cellstyle><h6>@game.home_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
-                        if (gameInRange)
-                            gamesLost++;
-                    }
-                }
-                else
-                {
-                    if (game.away_points > game.home_points)
-                    {
-                        lstRegularRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
-                        if (gameInRange)
-                            gamesWon++;
-                    }
-                    else
-                    {
-                        lstRegularRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
-                        if (gameInRange)
-                            gamesLost++;
-                    }
-                }
-            }
-
-
-            @foreach (var game in gamesForTeamPostSeason)
-            {
-                bool gameInRange = game.start_date < DateTime.Now;
-
-                if (game.home_id == teamSelectedId)
-                {
-                    if (game.home_points > game.away_points)
-                    {
-                        lstPostRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
-                        if (gameInRange)
-                            gamesWon++;
-                    }
-                    else
-                    {
-                        lstPostRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
-                        if (gameInRange)
-                            gamesLost++;
-                    }
-                }
-                else
-                {
-                    if (game.away_points > game.home_points)
-                    {
-                        lstPostRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
-                        if (gameInRange)
-                            gamesWon++;
-                    }
-                    else
-                    {
-                        lstPostRender.Add(@<tr><td><h6>@game.start_date</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
-                        if (gameInRange)
-                            gamesLost++;
-                    }
-                }
-                
-            }
-
             <table>
                 <tr><td colspan=@colSpan><h3><b>@team.school (@team.conference) @seasonSelected Schedule (@gamesWon - @gamesLost)</b></h3></td></tr>
                 <tr><td colspan=@colSpan><hr /></td></tr>
@@ -148,13 +247,14 @@
                     }
                 }
             </table>
-
         </Content>
+
     </DxPopup>
 
 }
 
-@if(LoadingPopupVisible)
+
+@if (LoadingPopupVisible)
 {
     <h4 style="font-weight:bolder;align-content:center;align-items:center;vertical-align:central;text-align:center;align-self:center">
         @LoadingMessage
@@ -165,16 +265,16 @@ else
 
     <DxDataGrid @ref="@gridRefRegular"
                 VerticalScrollableHeight="300"
-                ShowFilterRow="@true"
+                ShowFilterRow="true"
                 SelectionMode="DataGridSelectionMode.None"
                 AllowSort="@false"
                 HtmlDataCellDecoration="@OnHtmlDataCellDecoration"
                 CssClass="mw-1100"
                 Data="@gamesRegularSeason"
                 AllowColumnDragDrop="@false"
-                PageSize="5"
-                >
+                PageSize="5">
         <HeaderTemplate>
+            <DxButton RenderStyle="ButtonRenderStyle.Light" Title="Click for Top 25 Games." Text="Top 25" @onclick="(() => ShowAPTop25ModalVisible = true)"></DxButton>
             <center><h1>Regular Season</h1></center>
         </HeaderTemplate>
 
@@ -185,20 +285,20 @@ else
                                            Caption="Season"
                                            Data="@regularSeasons"
                                            FilteringMode="DataGridFilteringMode.Contains"
-                                           Width="125px"
+                                           Width="15px"
                                            IntialFilter=@(regularSeasons.Max())>
             </MyDxDataGridIntComboBoxColumn>
             <MyDxDataGridIntComboBoxColumn Field="@nameof(Game.week)"
                                            Caption="Week"
                                            Data="@regularWeeks"
                                            FilteringMode="DataGridFilteringMode.Contains"
-                                           Width="100px"
+                                           Width="15px"
                                            IntialFilter="@defaultRegularWeek">
             </MyDxDataGridIntComboBoxColumn>
             <MyDxDateGridColumn EnableDates="@enabledDatesReg"
                                 Caption="Date" Field="@nameof(Game.start_date)"
                                 DisplayFormat="f"
-                                Width="300px">
+                                Width="125px">
 
             </MyDxDateGridColumn>
             <DxDataGridComboBoxColumn Field="@nameof(Game.away_team)"
@@ -218,8 +318,8 @@ else
             <DxDataGridColumn Caption="Score"
                               Field="@nameof(Game.away_points)"
                               AllowFilter="@false"
-                              Width="100px" />
-            @*<DxDataGridColumn Caption="@ast" Field="@nameof(Game.ast)" AllowFilter="@false" />*@
+                              Width="20px" />
+            @*<DxDataGridColumn Caption="@ast" Field="@nameof(Game.ast)" AllowFilter="@false" Width="25px"/>*@
             <DxDataGridComboBoxColumn Field="@nameof(Game.home_team)"
                                       Caption="Home Team"
                                       Data="@teamsRegular"
@@ -237,7 +337,7 @@ else
             <DxDataGridColumn Caption="Score"
                               Field="@nameof(Game.home_points)"
                               AllowFilter="@false"
-                              Width="100px" />
+                              Width="20px" />
 
         </Columns>
     </DxDataGrid>
@@ -263,21 +363,21 @@ else
                                            Caption="Season"
                                            Data="@postSeasons"
                                            FilteringMode="DataGridFilteringMode.Contains"
-                                           Width="125px"
+                                           Width="15px"
                                            IntialFilter=@(postSeasons.Max())>
             </MyDxDataGridIntComboBoxColumn>
             <MyDxDataGridIntComboBoxColumn Field="@nameof(Game.week)"
                                            Caption="Week"
                                            Data="@postWeeks"
                                            FilteringMode="DataGridFilteringMode.Contains"
-                                           Width="100px"
+                                           Width="15px"
                                            IntialFilter=@(postWeeks.Max())>
             </MyDxDataGridIntComboBoxColumn>
             <MyDxDateGridColumn EnableDates="@enabledDatesPost"
                                 Caption="Date"
                                 Field="@nameof(Game.start_date)"
                                 DisplayFormat="f"
-                                Width="300px"
+                                Width="125px"
                                 AllowFilter="@false" />
             <DxDataGridComboBoxColumn Field="@nameof(Game.away_team)"
                                       Caption="Away Team"
@@ -296,7 +396,7 @@ else
             <DxDataGridColumn Caption="Score"
                               Field="@nameof(Game.away_points)"
                               AllowFilter="@false"
-                              Width="100px" />
+                              Width="20px" />
             @*<DxDataGridColumn Caption="@ast" Field="@nameof(Game.ast)" AllowFilter="@false" />*@
             <DxDataGridComboBoxColumn Field="@nameof(Game.home_team)"
                                       Caption="Home Team"
@@ -315,7 +415,7 @@ else
             <DxDataGridColumn Caption="Score"
                               Field="@nameof(Game.home_points)"
                               AllowFilter="@false"
-                              Width="100px" />
+                              Width="20px" />
         </Columns>
     </DxDataGrid>
 
@@ -325,49 +425,53 @@ else
 
 @code
 {
-
-    private bool PopupVisible { get; set; } = false;
+    //private const string ast = "@";
+    private bool DetailPopupVisible { get; set; } = false;
+    private bool ShowAPTop25ModalVisible { get; set; } = false;
     private int? teamSelectedId = 0;
     private int? seasonSelected = 0;
-    private static bool AlreadyLoaded;
-    private static bool LoadingPopupVisible { get; set; } = false;
-    private static int defaultRegularWeek = 1;
-    private static DxDataGrid<Game> gridRefRegular;
-    private static DxDataGrid<Game> gridRefPost;
-    private static string LoadingMessage;
+    //private static bool AlreadyLoaded;
+    private bool LoadingPopupVisible { get; set; } = false;
+    private int defaultRegularWeek = 1;
+    private DxDataGrid<Game> gridRefRegular;
+    private DxDataGrid<Game> gridRefPost;
+    private DxDataGrid<Game> gridRefTop25;
+    private string LoadingMessage;
 
-    private static List<Game> gamesRegularSeason = new List<Game>();
-    private static List<Game> gamesPostSeason = new List<Game>();
-    private static List<Team> teamsRegular = new List<Team>();
-    private static List<Team> teamsPost = new List<Team>();
+    private List<Game> gamesRegularSeason = new List<Game>();
+    private List<Game> gamesPostSeason = new List<Game>();
+    private List<Team> teamsRegular = new List<Team>();
+    private List<Team> teamsPost = new List<Team>();
 
-    private static List<Ranking> regularRankings = new List<Ranking>();
-    private static List<Ranking> postRankings = new List<Ranking>();
-    private static List<string> conferences = new List<string>();
-    private static List<string> divisions = new List<string>();
-    private static List<string> teamNames = new List<string>();
-    private static List<int> regularSeasons = new List<int>();
-    private static List<int> postSeasons = new List<int>();
-    private static List<int> regularWeeks = new List<int>();
-    private static List<int> postWeeks = new List<int>();
-    private static List<Record> records = new List<Record>();
-    private static List<DateTime?> enabledDatesReg = new List<DateTime?>();
-    private static List<DateTime?> enabledDatesPost = new List<DateTime?>();
+    private List<Ranking> regularRankings = new List<Ranking>();
+    private List<Ranking> postRankings = new List<Ranking>();
+    private List<string> conferences = new List<string>();
+    private List<string> divisions = new List<string>();
+    private List<string> teamNames = new List<string>();
+    private List<int> regularSeasons = new List<int>();
+    private List<int> postSeasons = new List<int>();
+    private List<int> regularWeeks = new List<int>();
+    private List<int> postWeeks = new List<int>();
+    private List<Record> records = new List<Record>();
+    private List<DateTime?> enabledDatesReg = new List<DateTime?>();
+    private List<DateTime?> enabledDatesPost = new List<DateTime?>();
+    private List<Game> top25APGamesRegularSeason = new List<Game>();
+    //private List<Game> rankedGamesPostSeason = new List<Game>();
 
 
     private void StartTimer()
     {
-        int millis = 30000;
+        int millis = 5000;
 
         Timer.SetTimer(millis);
         Timer.OnElapsed += TimerElapsedHandler;
 
-        Console.WriteLine($"Timer Started and set to {millis/1000} seconds");
+        //Console.WriteLine($"Timer Started and set to {millis/1000} seconds");
     }
 
     private void TimerElapsedHandler()
     {
-        //Console.WriteLine("Timer Elapsed.");
+        Console.WriteLine("Timer Elapsed.");
         //foreach (var gamed in gamesRegularSeason)
         //{
         //    gamed.home_points += 1;
@@ -380,7 +484,7 @@ else
         //    gridRefRegular.Refresh();
         //});
 
-        GC.Collect();
+        GC.Collect(2, GCCollectionMode.Forced);
     }
 
     protected async Task LoadDataFromWeb()
@@ -388,7 +492,7 @@ else
         //path to files
         string path = null;
 
-
+        Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "cskUHKZR7g0PyKTQLJupMi+C6kwgbVf+7O/Io0BYk8F7KCg8X5/9mvVGY5dy+v96");
         if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
             path = Environment.CurrentDirectory;
@@ -399,23 +503,31 @@ else
             path = System.IO.Path.GetDirectoryName(path);
         }
 
+
         var teamsTask = Task.Run(() =>
         {
+            Console.WriteLine("Started Loading Teams From Web.");
             teamsRegular = Http.GetJsonAsync<List<Team>>("https://api.collegefootballdata.com/teams").Result;
             teamsPost.AddRange(teamsRegular);
+            Console.WriteLine("Finished Loading Teams From Web.");
 
-            var txt = JsonConvert.SerializeObject(teamsRegular);
-            System.IO.File.WriteAllTextAsync(@"C:\FootballData\teamsRegular.json", txt);
 
-            txt = JsonConvert.SerializeObject(teamsPost);
-            System.IO.File.WriteAllTextAsync(@"C:\FootballData\teamsPost.json", txt);
+            //var txt = JsonConvert.SerializeObject(teamsRegular);
+            //Console.WriteLine($"Started Writing Regular Season Teams To {path}/FootballData/teamsRegular.json.");
+            //System.IO.File.WriteAllTextAsync($"{path}/FootballData/teamsRegular.json", txt);
+
+
+            //txt = JsonConvert.SerializeObject(teamsPost);
+            //Console.WriteLine($"Started Writing Post Season Teams To {path}/FootballData/teamsRegular.json.");
+            //System.IO.File.WriteAllTextAsync($"{path}/FootballData/teamsPost.json", txt);
 
         });
 
+        Console.WriteLine(path);
         teamsTask.Wait();
         teamsTask = null;
 
-        for (int i = 2021; i <= DateTime.Now.Year; i++)
+        for (int i = 2021; i <= DateTime.Now.Year + 1; i++)
         {
 
             var gamesTask = Task.Run(() =>
@@ -477,19 +589,19 @@ else
         }
 
         var txt = JsonConvert.SerializeObject(gamesRegularSeason);
-        await System.IO.File.WriteAllTextAsync(@"C:\FootballData\gamesRegularSeason.json", txt);
+        await System.IO.File.WriteAllTextAsync($"{path}/FootballData/gamesRegularSeason.json", txt);
 
         txt = JsonConvert.SerializeObject(gamesPostSeason);
-        await System.IO.File.WriteAllTextAsync(@"C:\FootballData\gamesPostSeason.json", txt);
+        await System.IO.File.WriteAllTextAsync($"{path}/FootballData/gamesPostSeason.json", txt);
 
         txt = JsonConvert.SerializeObject(regularRankings);
-        await System.IO.File.WriteAllTextAsync(@"C:\FootballData\regularRankings.json", txt);
+        await System.IO.File.WriteAllTextAsync($"{path}/FootballData/regularRankings.json", txt);
 
         txt = JsonConvert.SerializeObject(postRankings);
-        await System.IO.File.WriteAllTextAsync(@"C:\FootballData\postRankings.json", txt);
+        await System.IO.File.WriteAllTextAsync($"{path}/FootballData/postRankings.json", txt);
 
         txt = JsonConvert.SerializeObject(records);
-        await System.IO.File.WriteAllTextAsync(@"C:\FootballData\records.json", txt);
+        await System.IO.File.WriteAllTextAsync($"{path}/FootballData/records.json", txt);
 
 
     }
@@ -499,29 +611,34 @@ else
 
         LoadingPopupVisible = true;
 
-        await Task.Delay(1);
         LoadingMessage = $"Loading College Football Data...";
         StateHasChanged();
 
-        if (AlreadyLoaded)
-        {
-            GC.Collect();
-            LoadingPopupVisible = false;
-            return;
-        }
+
+
+        //if (AlreadyLoaded)
+        //{
+        //    GC.Collect();
+        //    LoadingPopupVisible = false;
+        //    return;
+        //}
+
+
 
         //await LoadDataFromWeb();
 
-        string path = null;
-        if (Environment.OSVersion.Platform == PlatformID.Unix)
-        {
-            path = Environment.CurrentDirectory;
-        }
-        else
-        {
-            path = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            path = System.IO.Path.GetDirectoryName(path);
-        }
+        Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "cskUHKZR7g0PyKTQLJupMi+C6kwgbVf+7O/Io0BYk8F7KCg8X5/9mvVGY5dy+v96");
+        //string path = null;
+
+        //if (Environment.OSVersion.Platform == PlatformID.Unix)
+        //{
+        //    path = Environment.CurrentDirectory;
+        //}
+        //else
+        //{
+        //    path = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        //    path = System.IO.Path.GetDirectoryName(path);
+        //}
 
         //To get the location the assembly normally resides on disk or the install directory
 
@@ -529,190 +646,195 @@ else
 
         //once you have the path you get the directory with:
 
-        var teamsTask = Task.Run(() =>
+
+        //teamsRegular = JsonConvert.DeserializeObject<List<Team>>(System.IO.File.ReadAllText($"{path}/FootballData/teamsRegular.json"));
+        teamsRegular = await Http.GetJsonAsync<List<Team>>("https://api.collegefootballdata.com/teams");
+        teamsPost.AddRange(teamsRegular);
+
+        for (int i = 2020; i <= DateTime.Now.Year; i++)
         {
-            teamsRegular = JsonConvert.DeserializeObject<List<Team>>(System.IO.File.ReadAllText($"{path}/FootballData/teamsRegular.json"));
-            teamsPost.AddRange(teamsRegular);
-        });
 
-        teamsTask.Wait();
-        teamsTask = null;
+            gamesRegularSeason.AddRange(await Http.GetJsonAsync<List<Game>>($"https://api.collegefootballdata.com/games?year={i}&seasonType=regular"));
+            gamesPostSeason.AddRange(await Http.GetJsonAsync<List<Game>>($"https://api.collegefootballdata.com/games?year={i}&seasonType=postseason"));
+            regularRankings.AddRange(await Http.GetJsonAsync<List<Ranking>>($"https://api.collegefootballdata.com/rankings?year={i}&seasonType=regular"));
+            postRankings.AddRange(await Http.GetJsonAsync<List<Ranking>>($"https://api.collegefootballdata.com/rankings?year={i}&seasonType=postseason"));
+            records.AddRange(await Http.GetJsonAsync<List<Record>>($"https://api.collegefootballdata.com/records?year={i}"));
 
-        List<Task> tasks = new List<Task>();
-
-        var t1 = Task.Run(() =>
-        {
-            gamesRegularSeason = JsonConvert.DeserializeObject<List<Game>>(System.IO.File.ReadAllText($"{path}/FootballData/gamesRegularSeason.json"));
-        });
-        tasks.Add(t1);
-
-        var t2 = Task.Run(() =>
-        {
-            gamesPostSeason = JsonConvert.DeserializeObject<List<Game>>(System.IO.File.ReadAllText($"{path}/FootballData/gamesPostSeason.json"));
-        });
-        tasks.Add(t2);
-
-        var t3 = Task.Run(() =>
-        {
-            regularRankings = JsonConvert.DeserializeObject<List<Ranking>>(System.IO.File.ReadAllText($"{path}/FootballData/regularRankings.json"));
-        });
-        tasks.Add(t3);
-
-        var t4 = Task.Run(() =>
-        {
-            postRankings = JsonConvert.DeserializeObject<List<Ranking>>(System.IO.File.ReadAllText($"{path}/FootballData//postRankings.json"));
-        });
-        tasks.Add(t4);
-
-        var t5 = Task.Run(() =>
-        {
-            records = JsonConvert.DeserializeObject<List<Record>>(System.IO.File.ReadAllText($"{path}/FootballData/records.json"));
-        });
-        tasks.Add(t5);
-
-        Task.WaitAll(tasks.ToArray());
-        for (int i = 0; i < tasks.Count; i++)
-        {
-            tasks[i].Dispose();
-            tasks[i] = null;
+            LoadingMessage = $"Loading Data for Year {i}";
+            StateHasChanged();
         }
 
-        var findDefaultWeekTask = Task.Run(() =>
+        gamesRegularSeason = gamesRegularSeason.OrderBy((s) => s.start_date).ToList();
+        var maxYear = gamesRegularSeason.Max((s) => s.start_date).Year;
+        var maxWeek = gamesRegularSeason.Max((s) => s.week);
+        //var maxPostSeason = gamesPostSeason.Max((s) => s.season);
+
+        var currentDate = DateTime.Now;
+
+        if (gamesRegularSeason.Find((s) => s.start_date.Year == currentDate.Year) != null)
         {
-            gamesRegularSeason = gamesRegularSeason.OrderBy((s) => s.start_date).ToList();
-            var maxYear = gamesRegularSeason.Max((s) => s.start_date).Year;
-            var maxWeek = gamesRegularSeason.Max((s) => s.week);
-            //var maxPostSeason = gamesPostSeason.Max((s) => s.season);
-
-            var currentDate = DateTime.Now;
-
-            if (gamesRegularSeason.Find((s) => s.start_date.Year == currentDate.Year) != null)
+            var currentGame = gamesRegularSeason.Find((s) => s.start_date.Year == currentDate.Year && s.start_date.Month == currentDate.Month && s.start_date.Day == currentDate.Day);
+            if (currentGame != null)
             {
-                var currentGame = gamesRegularSeason.Find((s) => s.start_date.Year == currentDate.Year && s.start_date.Month == currentDate.Month && s.start_date.Day == currentDate.Day);
-                if (currentGame != null)
-                {
-                    defaultRegularWeek = currentGame.week;
-                }
-                else
-                {
-                    while (true)
-                    {
-                        var foundGame = gamesRegularSeason.Find((s) => s.start_date.Year == currentDate.Year && s.start_date.Month == currentDate.Month && s.start_date.Day == currentDate.Day);
-                        if (foundGame != null)
-                        {
-                            defaultRegularWeek = foundGame.week;
-                            break;
-                        }
-
-                        currentDate = currentDate.AddDays(1);
-                        if (currentDate.Year > DateTime.Now.Year)
-                        {
-                            defaultRegularWeek = maxWeek;
-                            break;
-                        }
-                    }
-                }
+                defaultRegularWeek = currentGame.week;
             }
             else
             {
-                defaultRegularWeek = maxWeek;
-            }
-        });
+                while (true)
+                {
+                    var foundGame = gamesRegularSeason.Find((s) => s.start_date.Year == currentDate.Year && s.start_date.Month == currentDate.Month && s.start_date.Day == currentDate.Day);
+                    if (foundGame != null)
+                    {
+                        defaultRegularWeek = foundGame.week;
+                        break;
+                    }
 
-        var enableDatesTask = Task.Run(() =>
+                    currentDate = currentDate.AddDays(1);
+                    if (currentDate.Year > DateTime.Now.Year)
+                    {
+                        defaultRegularWeek = maxWeek;
+                        break;
+                    }
+                }
+            }
+        }
+        else
         {
-            List<Team> tempTeams = new List<Team>();
-            foreach (var game in gamesRegularSeason)
-            {
-                var at = tempTeams.Where(s => s.id == game.away_id);
-                if (at.Count() < 1)
-                    tempTeams.AddRange(teamsRegular.Where(s => s.id == game.away_id));
-
-                at = tempTeams.Where(s => s.id == game.home_id);
-                if (at.Count() < 1)
-                    tempTeams.AddRange(teamsRegular.Where(s => s.id == game.home_id));
-
-                enabledDatesReg.Add(new DateTime(game.start_date.Year, game.start_date.Month, game.start_date.Day));
-            }
-
-            enabledDatesReg = enabledDatesReg.Distinct().ToList();
-            teamsRegular.Clear();
-            teamsRegular = tempTeams.OrderBy(s => s.school).ToList();
-            tempTeams.Clear();
-
-
-            gamesPostSeason = gamesPostSeason.OrderBy((s) => s.start_date).ToList();
-
-            foreach (var game in gamesPostSeason)
-            {
-                var at = tempTeams.Where(s => s.id == game.away_id);
-                if (at.Count() < 1)
-                    tempTeams.AddRange(teamsPost.Where(s => s.id == game.away_id));
-
-                at = tempTeams.Where(s => s.id == game.home_id);
-                if (at.Count() < 1)
-                    tempTeams.AddRange(teamsPost.Where(s => s.id == game.home_id));
-
-                enabledDatesPost.Add(new DateTime(game.start_date.Year, game.start_date.Month, game.start_date.Day));
-            }
-
-            enabledDatesPost = enabledDatesPost.Distinct().ToList();
-            teamsPost.Clear();
-            teamsPost = tempTeams.OrderBy(s => s.school).ToList();
-            tempTeams.Clear();
-
-        });
-
-        List<Task> auxTasks = new List<Task>();
-
-        auxTasks.Add(Task.Run(() => regularSeasons = gamesRegularSeason.GroupBy((s) => s.season).Select((s) => s.Key).ToList()));
-
-        auxTasks.Add(Task.Run(() => regularWeeks = gamesRegularSeason.GroupBy((s) => s.week).Select((s) => s.Key).ToList()));
-        //regularWeeks.Add(regularWeeks.Count + 1);
-
-        auxTasks.Add(Task.Run(() =>
-        {
-            postSeasons = gamesPostSeason.GroupBy((s) => s.season).Select((s) => s.Key).ToList();
-            if(postSeasons.Count == 0)
-            {
-                postSeasons.Add(DateTime.Now.Year);
-            }
-        }));
-
-
-
-        auxTasks.Add(Task.Run(() => postWeeks.Add(1))); // = await Task.FromResult(gamesPostSeason.GroupBy((s) => s.week).Select((s) => s.Key).ToList());
-
-        auxTasks.Add(Task.Run(() => conferences = teamsRegular.GroupBy((s) => s.conference).Select((s) => s.Key).ToList()));
-
-        auxTasks.Add(Task.Run(() => divisions = teamsRegular.GroupBy((s) => s.division).Select((s) => s.Key).ToList()));
-
-        Task.WaitAll(auxTasks.ToArray());
-
-        for (int i = 0; i < auxTasks.Count; i++)
-        {
-            auxTasks[i].Dispose();
-            auxTasks[i] = null;
+            defaultRegularWeek = maxWeek;
         }
 
-        enableDatesTask.Wait();
-        enableDatesTask.Dispose();
-        enableDatesTask = null;
 
-        findDefaultWeekTask.Wait();
-        findDefaultWeekTask.Dispose();
-        findDefaultWeekTask = null;
+        List<Team> tempTeams = new List<Team>();
+        foreach (var game in gamesRegularSeason)
+        {
+            var at = tempTeams.Where(s => s.id == game.away_id);
+            if (at.Count() < 1)
+                tempTeams.AddRange(teamsRegular.Where(s => s.id == game.away_id));
+
+            at = tempTeams.Where(s => s.id == game.home_id);
+            if (at.Count() < 1)
+                tempTeams.AddRange(teamsRegular.Where(s => s.id == game.home_id));
+
+            enabledDatesReg.Add(new DateTime(game.start_date.Year, game.start_date.Month, game.start_date.Day));
+        }
+
+        enabledDatesReg = enabledDatesReg.Distinct().ToList();
+        teamsRegular.Clear();
+        teamsRegular = tempTeams.OrderBy(s => s.school).ToList();
+        tempTeams.Clear();
 
 
+        gamesPostSeason = gamesPostSeason.OrderBy((s) => s.start_date).ToList();
 
-        await Task.FromResult(LoadingPopupVisible = false);
+        foreach (var game in gamesPostSeason)
+        {
+            var at = tempTeams.Where(s => s.id == game.away_id);
+            if (at.Count() < 1)
+                tempTeams.AddRange(teamsPost.Where(s => s.id == game.away_id));
 
-        StartTimer();
+            at = tempTeams.Where(s => s.id == game.home_id);
+            if (at.Count() < 1)
+                tempTeams.AddRange(teamsPost.Where(s => s.id == game.home_id));
+
+            enabledDatesPost.Add(new DateTime(game.start_date.Year, game.start_date.Month, game.start_date.Day));
+        }
+
+        enabledDatesPost = enabledDatesPost.Distinct().ToList();
+        teamsPost.Clear();
+        teamsPost = tempTeams.OrderBy(s => s.school).ToList();
+        tempTeams.Clear();
+
+        regularSeasons = gamesRegularSeason.GroupBy((s) => s.season).Select((s) => s.Key).ToList();
+        regularWeeks = gamesRegularSeason.GroupBy((s) => s.week).Select((s) => s.Key).ToList();
+
+        postSeasons = gamesPostSeason.GroupBy((s) => s.season).Select((s) => s.Key).ToList();
+        if (postSeasons.Count == 0)
+        {
+            postSeasons.Add(DateTime.Now.Year);
+        }
+
+        postWeeks.Add(1);
+        conferences = teamsRegular.GroupBy((s) => s.conference).Select((s) => s.Key).ToList();
+        divisions = teamsRegular.GroupBy((s) => s.division).Select((s) => s.Key).ToList();
+
+        await LoadAPTop25(currentDate, "AP");
+
+        LoadingPopupVisible = false;
 
 
-        AlreadyLoaded = true;
+        //StartTimer();
+
+        //AlreadyLoaded = true;
     }
 
+    private async Task LoadAPTop25(DateTime currentDate, string p_poll)
+    {
+        foreach (var game in gamesRegularSeason)
+        {
+            var rankingWeek = await Task.FromResult(regularRankings.Find((s) => s.week == defaultRegularWeek && s.season == game.season));
+
+            if (rankingWeek != null)
+            {
+                var poll = await Task.FromResult(rankingWeek.polls.Find((s) => s.poll.Contains(p_poll)));
+
+                if (poll != null)
+                {
+
+                    var t = await Task.FromResult(poll.ranks.Find((s) => (s.school == game.away_team || s.school == game.home_team) && game.season == currentDate.Year && game.week == defaultRegularWeek));
+                    if (t != null)
+                    {
+                        top25APGamesRegularSeason.Add(game);
+                    }
+                }
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        gamesRegularSeason.Clear();
+        gamesPostSeason.Clear();
+        teamsRegular.Clear();
+        teamsPost.Clear();
+        regularRankings.Clear();
+        postRankings.Clear();
+        conferences.Clear();
+        divisions.Clear();
+        teamNames.Clear();
+        regularSeasons.Clear();
+        postSeasons.Clear();
+        regularWeeks.Clear();
+        postWeeks.Clear();
+        records.Clear();
+        top25APGamesRegularSeason.Clear();
+
+
+        gamesRegularSeason = null;
+        gamesPostSeason = null;
+        teamsRegular = null;
+        teamsPost = null;
+        regularRankings = null;
+        postRankings = null;
+        conferences = null;
+        divisions = null;
+        teamNames = null;
+        regularSeasons = null;
+        postSeasons = null;
+        regularWeeks = null;
+        postWeeks = null;
+        records = null;
+        top25APGamesRegularSeason = null;
+
+        gridRefRegular = null;
+        gridRefPost = null;
+        gridRefTop25 = null;
+
+        GC.Collect(2, GCCollectionMode.Forced);
+
+        Console.WriteLine("Diposed Called....");
+
+
+    }
 
     public async void OnHtmlDataCellDecoration(DataGridHtmlDataCellDecorationEventArgs<Game> eventArgs)
     {
@@ -737,8 +859,9 @@ else
     {
         this.teamSelectedId = teamId;
         this.seasonSelected = season;
-        PopupVisible = true;
+        DetailPopupVisible = true;
     }
+
 
     private RenderFragment RenderTeamGridCell(Game context, bool ishomecolumn, List<Ranking> rankings)
     {
@@ -746,7 +869,7 @@ else
         var away_points = context.away_points;
         var home_points = context.home_points;
         string team = null;
-        int ?teamId = 0;
+        int? teamId = 0;
         string conference = null;
         string logo = null;
         string rank = null;
@@ -783,7 +906,7 @@ else
             conference = "NA";
         }
 
-        if (logo == null || string.IsNullOrEmpty(logo))
+        if (string.IsNullOrWhiteSpace(logo))
         {
             logo = "blank.png";
         }
@@ -803,6 +926,7 @@ else
                     points = $"{points}";
                     rank = t.rank.ToString();
                     rank = $"{rank}";
+
                 }
             }
         }
@@ -811,7 +935,7 @@ else
 
         RenderFragment currentTeam;
 
-        RenderFragment logo35wh = @<img width="35" height="35" src="@logo" id="@teamId" />;
+        RenderFragment logo35wh =@<img width="35" height="35" src="@logo" id="@teamId" />;
 
         if (string.IsNullOrWhiteSpace(rank))
         {
@@ -837,19 +961,19 @@ else
 
         RenderFragment template =
         @<table style="border:none">
-             <tr>
-                 <td style="border:none;">
-                     @logo35wh
-                 </td>
-                 <td style="text-align:left;border:none;width:100%">
-                     @currentTeam
-                     @winLossRecord
-                     @conf
-                 </td>
-                 <td style="text-align:left;border:none;width:100%">
-                     <DxButton RenderStyle="ButtonRenderStyle.Light" Title="Click for team Schedule." IconCssClass="info" IconPosition="ButtonIconPosition.BeforeText" @onclick="(() => ShowModal(teamId, context.season))"></DxButton>
-                 </td>
-             </tr>
+            <tr>
+                <td style="border:none;">
+                    @logo35wh
+                </td>
+                <td style="text-align:left;border:none;width:100%">
+                    @currentTeam
+                    @winLossRecord
+                    @conf
+                </td>
+                <td style="text-align:left;border:none;width:100%">
+                    <DxButton RenderStyle="ButtonRenderStyle.Light" Title="Click for team Schedule." IconCssClass="info" IconPosition="ButtonIconPosition.BeforeText" @onclick="(() => ShowModal(teamId, context.season))"></DxButton>
+                </td>
+            </tr>
         </table>;
 
 

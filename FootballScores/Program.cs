@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+
 namespace FootballScores
 {
     public class Program
@@ -18,12 +19,24 @@ namespace FootballScores
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .UseSystemd()
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                return Host.CreateDefaultBuilder(args)
+                    .UseSystemd()
+                    .ConfigureWebHostDefaults(webBuilder => {
+                        webBuilder.UseStartup<Startup>();
+                    });
+            }
+            else
+            {
+                return Host.CreateDefaultBuilder(args)
+                    .UseWindowsService()
+                    .ConfigureWebHostDefaults(webBuilder => {
+                        webBuilder.UseStartup<Startup>();
+                    });
+            }
+        }
     }
 }

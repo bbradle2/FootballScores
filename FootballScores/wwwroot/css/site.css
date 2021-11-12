@@ -196,43 +196,87 @@ app {
 }
 
 .custom-popup {
-    max-width:max-content;
+    max-width: max-content;
+    
 }
 
-.custom-popup .modal-header {
-    padding: 0;
+    .custom-popup .modal-header {
+        padding: 0;
+        
+    }
+
+    .custom-popup .custom-header {
+        padding: 0.3rem 0;
+        font-size: 1.4rem;
+        justify-content: right;
+        display: flex;
+        align-items: center;
+        
+    }
+
+    .custom-popup .demo-icon-info {
+        margin: 0 0.5rem 0 0.6rem;
+        
+    }
+
+    .custom-popup .custom-header .close-button {
+        font-size: 0.9rem;
+        margin-left: auto;
+        margin-bottom: 0.2rem;
+        margin-right: 0.9rem;
+        
+    }
+
+    .custom-popup .modal-body {
+        padding-top: 0.6rem;
+       
+    }
+
+.custom-popup-top25 {
+    max-width: max-content;
+    
 }
 
-.custom-popup .custom-header {
-    padding: 0.3rem 0;
-    font-size: 1.4rem;
-    justify-content: right;
-    display: flex;
-    align-items: center;
-}
+    .custom-popup-top25 .modal-header {
+        padding: 0;
+        
+    }
 
-.custom-popup .demo-icon-info {
-    margin: 0 0.5rem 0 0.6rem;
-}
+    .custom-popup-top25 .custom-header {
+        padding: 0.3rem 0;
+        font-size: 1.4rem;
+        justify-content: right;
+        display: flex;
+        align-items: center;
+        
+    }
 
-.custom-popup .custom-header .close-button {
-    font-size: 0.9rem;
-    margin-left: auto;
-    margin-bottom: 0.2rem;
-    margin-right: 0.9rem;
-}
+    .custom-popup-top25 .demo-icon-info {
+        margin: 0 0.5rem 0 0.6rem;
+       
+    }
 
-.custom-popup .modal-body {
-    padding-top: 0.6rem;
-}
+    .custom-popup-top25 .custom-header .close-button {
+        font-size: 0.9rem;
+        margin-left: auto;
+        margin-bottom: 0.2rem;
+        margin-right: 0.9rem;
+        
+    }
+
+    .custom-popup-top25 .modal-body {
+        padding-top: 0.6rem;
+        
+    }
 
 table, th {
-   /* border-left: 2px solid black;
+    /* border-left: 2px solid black;
     border-right: 2px solid black;*/
     padding-left: 0px;
     padding-right: 0px;
     padding-top: 0px;
     padding-bottom: 0px;
+    
 }
 
 td {
@@ -241,7 +285,10 @@ td {
     padding-left: 0px;
     padding-right: 20px;
     padding-top: 0px;
-    padding-bottom: 0px;
+    /*font-family: Consolas;*/
+    /* padding-bottom: 0px;
+    font-family:Courier New;
+    font-weight:600;*/
 }
 
 hr {
