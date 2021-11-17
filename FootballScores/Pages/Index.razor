@@ -124,46 +124,47 @@
         bool gameInRange = game.start_date < DateTime.Now;
         string gameDate = game.start_date.ToString("ddd MM/dd/yyyy hh:mm tt");
         string gameWeek = string.Empty;
+        string school = team.school;
 
         //if (gameInRange)
-            gameWeek = "Week " + @game.week;
+                    gameWeek = "Week " + @game.week;
 
         if (game.home_id == teamSelectedId)
         {
             if (game.home_points > game.away_points)
             {
-                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
                 if (gameInRange)
                     gamesWon++;
             }
             else if (game.home_points < game.away_points)
             {
-                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td></tr>);
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td></tr>);
                 if (gameInRange)
                     gamesLost++;
             }
             else 
             {
-                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
             }
         }
         else
         {
             if (game.away_points > game.home_points)
             {
-                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school @@</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@school @@</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
                 if (gameInRange)
                     gamesWon++;
             }
             else if (game.away_points < game.home_points)
             {
-                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td></tr>);
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td></tr>);
                 if (gameInRange)
                     gamesLost++;
             } 
             else
             {
-                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
+                lstRegularRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
             }
         }
     }
@@ -174,6 +175,7 @@
         bool gameInRange = game.start_date < DateTime.Now;
         string gameDate = game.start_date.ToString("ddd MM/dd/yyyy hh:mm tt");
         string gameWeek = "Week " + @game.week;
+        string school = team.school;
 
         if (game.home_points > 0 && game.away_points > 0)
         {
@@ -181,13 +183,13 @@
             {
                 if (game.home_points > game.away_points)
                 {
-                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td></tr>);
                     if (gameInRange)
                         gamesWon++;
                 }
                 else
                 {
-                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td></tr>);
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.away_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td></tr>);
                     if (gameInRange)
                         gamesLost++;
                 }
@@ -196,13 +198,13 @@
             {
                 if (game.away_points > game.home_points)
                 {
-                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@team.school @@</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6><b>@school @@</b></h6></td><td style=@cellstyle><h6><b>@game.away_points</b></h6></td><td><h6>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</h6></td><td style=@cellstyle><h6>@game.home_points</h6></td></tr>);
                     if (gameInRange)
                         gamesWon++;
                 }
                 else
                 {
-                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@team.school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td></tr>);
+                    lstPostRender.Add(@<tr><td><h6>@gameDate</h6></td><td><h6>@gameWeek</h6></td><td><h6>@school @@</h6></td><td style=@cellstyle><h6>@game.away_points</h6></td><td><h6><b>@teamsRegular.Where((s) => s.id == game.home_id).FirstOrDefault().school</b></h6></td><td style=@cellstyle><h6><b>@game.home_points</b></h6></td></tr>);
                     if (gameInRange)
                         gamesLost++;
                 }
@@ -277,7 +279,7 @@ else
             <DxButton RenderStyle="ButtonRenderStyle.Light" Title="Click for Top 25 Games." Text="Top 25" @onclick="(() => ShowAPTop25ModalVisible = true)"></DxButton>
             <center><h1>Regular Season</h1></center>
         </HeaderTemplate>
-
+        
         <Columns>
 
 
@@ -340,6 +342,7 @@ else
                               Width="20px" />
 
         </Columns>
+        
     </DxDataGrid>
 
     @GridMargin("60px", "60px");
@@ -767,7 +770,7 @@ else
         //AlreadyLoaded = true;
     }
 
-    private async Task LoadAPTop25(DateTime currentDate, string p_poll)
+    private async Task LoadAPTop25(DateTime currentDate, string pPoll)
     {
         foreach (var game in gamesRegularSeason)
         {
@@ -775,7 +778,7 @@ else
 
             if (rankingWeek != null)
             {
-                var poll = await Task.FromResult(rankingWeek.polls.Find((s) => s.poll.Contains(p_poll)));
+                var poll = await Task.FromResult(rankingWeek.polls.Find((s) => s.poll.Contains(pPoll)));
 
                 if (poll != null)
                 {
