@@ -12,6 +12,12 @@
 
 @if (ShowAPTop25ModalVisible)
 {
+    //if(top25APGamesRegularSeason.Count == 0)
+    //{
+    //    ShowAPTop25ModalVisible = false;
+
+    //}
+
     <DxPopup CssClass="custom-popup" @bind-Visible="@ShowAPTop25ModalVisible">
         <HeaderTemplate>
             <div class="custom-header bg-white text-dark w-100">
@@ -30,7 +36,15 @@
                         AllowColumnDragDrop="@false"
                         >
                 <HeaderTemplate>
-                    <center><h1>Top 25 For Week @top25APGamesRegularSeason.FirstOrDefault().week</h1></center>
+                    @if (top25APGamesRegularSeason!.Count > 0)
+                    {
+                        <center><h1>Top 25 For Week @top25APGamesRegularSeason!.FirstOrDefault().week</h1></center>
+                    }
+                    else
+                    {
+                        <center><h1>No Top 25 Games</h1></center>
+                    }
+
                 </HeaderTemplate>
 
                 <Columns>
